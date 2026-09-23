@@ -3,7 +3,10 @@ import { SanaStore, memoryStorage, seedDemo, RULES, FIELD_KEYS, emptyFields, val
 // The teammate's numeric UI routes are views over the store's stable string IDs.
 // No readiness values or decisions are stored in the presentation layer.
 export class QalamModel {
-  constructor(store = new SanaStore()) { this.store = store; seedDemo(store); this.refresh(); }
+  constructor(store = new SanaStore()) { this.store = store; this.viewerId = 'demo-student'; this.businessId = 'К1'; this.businessName = 'Учебный бизнес · К1'; seedDemo(store); this.refresh(); }
+  setViewer(id) { this.viewerId = id; this.refresh(); }
+  setBusiness(id, name) { this.businessId = id; this.businessName = name; this.refresh(); }
+  requireOwner(task) { if (!task.own) throw new AppError('FORBIDDEN', 'Этой задачей управляет другой бизнес.'); }
   refresh() {
     const all = this.store.listTasks();
     const publications = new Map(this.store.catalog().map(t => [t.id, t]));
@@ -11,9 +14,9 @@ export class QalamModel {
       const shown = publications.get(t.id) || { fields: t.confirmedCard?.fields || t.fields, rating: t.rating };
       const f = shown.fields;
       return {
-        id: i + 1, storeId: t.id, sourceRef: t.sourceRef || '', own: true,
+        id: i + 1, storeId: t.id, sourceRef: t.sourceRef || '', ownerId: t.ownerId || t.sourceRef || 'К1', own: (t.ownerId || t.sourceRef || 'К1') === this.businessId,
         title: f.title || 'Новая задача', topic: f.topic || 'Без направления',
-        company: t.sourceRef ? `Учебный бизнес · ${t.sourceRef}` : 'Мой бизнес', mark: t.sourceRef || 'Q',
+        company: t.ownerName || (t.sourceRef ? `Учебный бизнес · ${t.sourceRef}` : 'Мой бизнес'), mark: t.sourceRef || 'Q',
         tags: [f.topic || 'Новая задача'], desc: f.context || f.need || 'Бизнес уточняет постановку.',
         score: shown.rating.score, parts: shown.rating.breakdown.map(p => p.points), rating: shown.rating,
         fields: RULES.map(r => [...new Set(r.parts.flatMap(p => p[2]))].filter(k => f[k]).map(k => f[k]).join('\n')),
@@ -30,7 +33,8 @@ export class QalamModel {
         university: p.qalamAuthor?.university || 'Учебная команда',
         skills: p.qalamAuthor?.skills || [...team.skills, ...team.technologies].join(' · '),
         idea: p.idea, plan: p.plan, days: p.timeline, link: p.prototypeUrl,
-        mine: Boolean(p.qalamAuthor), completedAt: p.completedAt,
+        mine: Boolean(p.qalamAuthor) && (p.qalamAuthor.id || 'legacy-student') === this.viewerId, completedAt: p.completedAt,
+        progressPoints: p.progressPoints || 0,
         isDemoLink: Boolean(p.isDemoLink),
         status: p.completedAt ? 'Выполнено' : ({ pending: 'Ожидает решения', accepted: 'Выбран', rejected: 'Отклонён' })[p.status],
       };
@@ -60,9 +64,12 @@ export class QalamModel {
     if (confirm && fields.title.length < 3) throw new AppError('VALIDATION', 'Укажите название от 3 символов.');
     if (publish && !confirm) throw new AppError('CONFIRMATION_REQUIRED', 'Для публикации подтвердите сведения.');
     const original = id === null ? null : this.task(id);
+    if (original) this.requireOwner(original);
     const saved = this.transaction(store => {
-      const raw = rawText.trim() || fields.context || fields.need || fields.title || 'Новый черновик';
+      const raw = rawText.trim() || fields.context || fields.need || fields.title;
+      if (!raw || raw.length < 3) throw new AppError('VALIDATION', 'Введите описание или название задачи от 3 символов.');
       let task = original ? store.updateTask(original.storeId, fields, raw) : store.createTask(raw, fields);
+      if (!original) store.commit(state => { const created = state.tasks.find(t => t.id === task.id); created.ownerId = this.businessId; created.ownerName = this.businessName; return created; });
       if (confirm) task = store.confirmTask(task.id);
       if (publish && !task.publishedCard) task = store.publishTask(task.id);
       return task;
@@ -71,6 +78,7 @@ export class QalamModel {
   }
   submit(id, data, author) {
     const taskId = this.task(id).storeId;
+    if (!author || typeof author.id !== 'string' || !author.id) throw new AppError('VALIDATION', 'Не выбран профиль студента.');
     validateUrl(data.link);
     return this.transaction(store => {
       const team = store.addTeam({ name: data.team?.trim() || 'Самостоятельно', skills: [author.skills || 'Не указаны'] });
@@ -82,11 +90,13 @@ export class QalamModel {
   decide(id, decision) {
     const offer = this.offers.find(o => o.id === id);
     if (!offer) throw new AppError('NOT_FOUND', 'Отклик не найден.');
+    this.requireOwner(this.task(offer.task));
     this.store.decideProposal(offer.storeId, decision); this.refresh();
   }
   complete(id) {
     const offer = this.offers.find(o => o.id === id);
     if (!offer) throw new AppError('NOT_FOUND', 'Отклик не найден.');
+    this.requireOwner(this.task(offer.task));
     this.store.completeProposal(offer.storeId); this.refresh();
   }
 }

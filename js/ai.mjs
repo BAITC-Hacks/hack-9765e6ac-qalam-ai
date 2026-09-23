@@ -64,6 +64,15 @@ export async function analyzeDraft({ text, answers = {}, mode = 'demo', fetchImp
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
+    // Presence of settings is checked locally; this does not call either model.
+    const healthResponse = await fetchImpl('/api/health', { cache: 'no-store', signal: controller.signal });
+    if (!healthResponse.ok) throw new AppError('AI_UNAVAILABLE', 'Локальный AI-сервер недоступен. Запустите сайт через start.bat или выберите демо-режим.');
+    const health = await healthResponse.json();
+    const configured = health?.[mode === 'openai' ? 'openaiConfigured' : 'ollamaConfigured'];
+    assert(health?.ok === true && typeof configured === 'boolean', 'AI_UNAVAILABLE', 'Сервер не поддерживает проверку AI. Обновите файлы и перезапустите start.bat.');
+    if (!configured) throw new AppError('AI_NOT_CONFIGURED', mode === 'openai'
+      ? 'OpenAI не настроен. Запустите configure-openai.bat и укажите API-ключ на своём компьютере. Без ключа используйте демо-режим.'
+      : 'Ollama не настроена. Укажите OLLAMA_MODEL на сервере и запустите Ollama. Без локальной модели используйте демо-режим.');
     const response = await fetchImpl('/api/ai/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...input, provider: mode }), signal: controller.signal });
     if (!response.ok) {
       let failure;

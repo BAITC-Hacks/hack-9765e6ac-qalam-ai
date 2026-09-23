@@ -64,7 +64,7 @@ def validate_output(output, data, keys):
 def ask_ollama(data, contract):
     model = setting('OLLAMA_MODEL')
     if not model:
-        raise ConnectionError('Задайте OLLAMA_MODEL и запустите Ollama или выберите демо-режим.')
+        raise AIServiceError('AI_NOT_CONFIGURED', 'Задайте OLLAMA_MODEL и запустите Ollama или выберите демо-режим.')
     base = setting('OLLAMA_URL', 'http://127.0.0.1:11434').rstrip('/')
     url = urlsplit(base)
     if url.scheme not in ('http', 'https') or not url.hostname or url.username or url.password:
@@ -161,6 +161,12 @@ def ask_openai(data, contract):
 class Handler(BaseHTTPRequestHandler):
     server_version = 'AISanaLocal/1.0'
 
+    def valid_host(self):
+        # The server is loopback-only. Reject DNS rebinding and foreign Host values.
+        return self.headers.get('Host', '') in {
+            f'127.0.0.1:{self.server.server_port}', f'localhost:{self.server.server_port}'
+        }
+
     def respond(self, status, body, content_type='application/json; charset=utf-8'):
         if not isinstance(body, bytes):
             body = json.dumps(body, ensure_ascii=False).encode('utf-8')
@@ -176,6 +182,9 @@ class Handler(BaseHTTPRequestHandler):
             pass
 
     def do_GET(self):
+        if not self.valid_host():
+            self.respond(403, {'error': 'HOST_DENIED'})
+            return
         path = unquote(urlsplit(self.path).path)
         if path == '/api/health':
             self.respond(200, {'ok': True, 'storage': 'browser-localStorage', 'ollamaConfigured': bool(setting('OLLAMA_MODEL')), 'openaiConfigured': bool(setting('OPENAI_API_KEY')), 'modelConnectivityChecked': False})
@@ -190,6 +199,9 @@ class Handler(BaseHTTPRequestHandler):
         self.respond(200, target.read_bytes(), allowed[target.suffix])
 
     def do_POST(self):
+        if not self.valid_host():
+            self.respond(403, {'error': 'HOST_DENIED'})
+            return
         if self.path != '/api/ai/analyze':
             self.respond(404, {'error': 'NOT_FOUND'})
             return
@@ -241,9 +253,19 @@ class Handler(BaseHTTPRequestHandler):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--port', type=int, default=8000)
+    parser.add_argument('--open', action='store_true', help='Open the site in the default browser')
     args = parser.parse_args()
-    server = ThreadingHTTPServer(('127.0.0.1', args.port), Handler)
-    print(f'AI Sana: http://127.0.0.1:{args.port}', flush=True)
+    if not 0 <= args.port <= 65535:
+        parser.error('Port must be between 0 and 65535.')
+    try:
+        server = ThreadingHTTPServer(('127.0.0.1', args.port), Handler)
+    except OSError:
+        parser.exit(1, 'Cannot start the server. Close the previous server or use --port 8001.\n')
+    address = f'http://127.0.0.1:{server.server_port}/'
+    print(f'AI Sana: {address}', flush=True)
+    if args.open:
+        import webbrowser
+        webbrowser.open(address)
     print('Demo mode is available without a model. Ctrl+C to stop.', flush=True)
     try:
         server.serve_forever()

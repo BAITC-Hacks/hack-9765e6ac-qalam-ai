@@ -28,6 +28,8 @@ function validateState(state) {
     assert(object(p) && typeof p.id === 'string' && !proposalIds.has(p.id) && taskIds.has(p.taskId) && teamIds.has(p.teamId) && ['pending', 'accepted', 'rejected'].includes(p.status) && ['idea', 'plan', 'timeline', 'prototypeUrl'].every(k => typeof p[k] === 'string'), 'STORAGE_CORRUPT', 'Некорректный отклик.');
     proposalIds.add(p.id); validateUrl(p.prototypeUrl);
     assert(p.completedAt === undefined || p.completedAt === null || (typeof p.completedAt === 'string' && p.status === 'accepted'), 'STORAGE_CORRUPT', 'Завершённым может быть только принятый отклик.');
+    assert(p.progressPoints === undefined || (p.completedAt && p.progressPoints === 10), 'STORAGE_CORRUPT', 'Некорректные баллы подтверждённого этапа.');
+    if (p.qalamAuthor) assert(object(p.qalamAuthor) && ['name','university','skills'].every(k => typeof p.qalamAuthor[k] === 'string') && (p.qalamAuthor.id === undefined || typeof p.qalamAuthor.id === 'string'), 'STORAGE_CORRUPT', 'Некорректный автор отклика.');
   }
   return state;
 }
@@ -186,9 +188,14 @@ export class SanaStore {
       assert(proposal.status === 'accepted', 'NOT_ACCEPTED', 'Завершить можно только принятый заказчиком отклик.');
       if (proposal.completedAt) return proposal;
       proposal.completedAt = now();
+      proposal.progressPoints = 10;
       this.event(state, 'proposal.completed', proposalId);
       return proposal;
     });
+  }
+  teamProgress(teamId) {
+    return this.read().proposals.filter(p => p.teamId === teamId && p.completedAt)
+      .reduce((sum, p) => sum + (p.progressPoints || 0), 0);
   }
   appendDataset(key, data) {
     key = cleanText(key, 'Ключ набора', 100);

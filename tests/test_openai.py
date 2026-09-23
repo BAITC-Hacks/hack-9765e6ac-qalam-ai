@@ -4,6 +4,7 @@ import os
 import ssl
 from pathlib import Path
 import tempfile
+from temp_support import temporary_directory
 import unittest
 from unittest.mock import patch
 from urllib.error import HTTPError, URLError
@@ -88,7 +89,7 @@ class OpenAITests(unittest.TestCase):
 
 class ConfigurationTests(unittest.TestCase):
     def test_save_and_reload_without_erasing_other_settings(self):
-        with tempfile.TemporaryDirectory() as directory:
+        with temporary_directory() as directory:
             path = Path(directory)/'.env'
             path.write_text('# Local config\nOLLAMA_MODEL=keep-me\nOPENAI_API_KEY=OLD_TEST_KEY\n', encoding='utf-8')
             save_openai('NEW_TEST_KEY', path=path)
@@ -106,11 +107,11 @@ class ConfigurationTests(unittest.TestCase):
             with patch.dict(os.environ, {}, clear=True):
                 self.assertEqual(setting('OPENAI_API_KEY'),'FILE_TEST_KEY')
                 self.assertEqual(setting('OPENAI_MODEL','gpt-4.1-mini'),'gpt-4.1-mini')
-        with tempfile.TemporaryDirectory() as directory:
+        with temporary_directory() as directory:
             self.assertEqual(read_local(Path(directory)/'missing'),{})
 
     def test_bad_input_does_not_replace_existing_settings(self):
-        with tempfile.TemporaryDirectory() as directory:
+        with temporary_directory() as directory:
             path=Path(directory)/'.env'; path.write_text('unchanged')
             for key in ['', 'contains space', 'line\nbreak']:
                 with self.assertRaises(ValueError): save_openai(key,path=path)
@@ -151,7 +152,7 @@ class OpenAIHttpTests(unittest.TestCase):
             self.assertNotIn(b'FAKE_TEST_KEY',raw)
 
     def test_secret_files_cannot_be_served(self):
-        with tempfile.TemporaryDirectory() as directory:
+        with temporary_directory() as directory:
             root=Path(directory)
             for name in ['.env','.env.tmp','.hidden.json']:
                 (root/name).write_text('FAKE_TEST_KEY')

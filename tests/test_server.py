@@ -84,9 +84,15 @@ class ServerTests(unittest.TestCase):
     def test_foreign_origin(self):
         self.assertEqual(self.post({'text': 'Описание'}, {'Origin': 'https://other.example'})[0], 403)
 
+    def test_foreign_host_and_rebinding(self):
+        self.assertEqual(self.request('/api/health', headers={'Host': 'evil.example:8000'})[0], 403)
+        self.assertEqual(self.post({'text': 'Описание'}, {'Host': 'evil.example:8000', 'Origin': 'http://evil.example:8000'})[0], 403)
+
     def test_missing_model_configuration(self):
         with patch.dict(os.environ, {'OLLAMA_MODEL': ''}):
-            self.assertEqual(self.post({'text': 'Описание'})[0], 503)
+            status, _, body = self.post({'text': 'Описание'})
+            self.assertEqual(status, 503)
+            self.assertEqual(json.loads(body)['error'], 'AI_NOT_CONFIGURED')
 
     def test_correct_transport_response(self):
         with patch.object(server, 'ask_ollama', return_value=valid_output()):

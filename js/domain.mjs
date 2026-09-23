@@ -31,7 +31,7 @@ export const RULES = [
   { key: 'users', label: 'Пользователи', parts: [['users', 10, ['users']]] },
   { key: 'communication', label: 'Связь с бизнесом', parts: [['contact', 10, ['contact', 'consultation_format', 'feedback_process']]] },
 ];
-export const RATING_VERSION = 'general-three-level-v2';
+export const RATING_VERSION = 'confirmed-completeness-v3';
 export class AppError extends Error {
   constructor(code, message) { super(message); this.name = 'AppError'; this.code = code; }
 }
@@ -59,7 +59,7 @@ export function validateFields(input = {}) {
 export function emptyFields() { return Object.fromEntries(FIELD_KEYS.map(k => [k, ''])); }
 const PLACEHOLDERS = /^(нет|не знаю|неизвестно|не указано|потом|уточнить|тест|test|todo|n\/?a|tbd|[-—–?.\s]+)$/iu;
 export function informative(value) {
-  return typeof value === 'string' && value.trim().length >= 10 && /[\p{L}\p{N}]/u.test(value) && !PLACEHOLDERS.test(value.trim());
+  return typeof value === 'string' && value.trim().length >= 10 && /\p{L}/u.test(value) && !PLACEHOLDERS.test(value.trim());
 }
 // One shared, deterministic heuristic for every logical field. It does not know
 // card IDs or target scores. Matches are exposed as evidence, not hidden labels.
@@ -85,6 +85,23 @@ export function levelFor(score) {
   assert(Number.isInteger(score) && score >= 0 && score <= 100, 'VALIDATION', 'Балл должен быть от 0 до 100.');
   return LEVELS.find(l => score >= l.min && score <= l.max);
 }
+// A number/role alone is not evidence that unrelated criteria are complete.
+// These are transparent completeness checks, not semantic truth verification.
+function criterionAssessment(field, text, max, selected, fields) {
+  const result = assessText(text, max);
+  if (!result.points) return result;
+  const present = key => selected.includes(key) && informative(fields[key]);
+  let complete = result.fraction === 1;
+  if (field === 'data_description') complete = present('data_description') && present('data_source');
+  if (field === 'success_metric') complete = present('success_metric') && present('success_target') && /\d/.test(fields.success_target);
+  if (field === 'contact') complete = present('contact') && /(?:[\w.+-]+@[\w.-]+\.[a-z]{2,}|https?:\/\/\S+|\+\d[\d ()-]{8,})/iu.test(fields.contact) && present('consultation_format') && present('feedback_process');
+  if (field === 'constraints') complete = /(?:\d+\s*(?:час|дн|день|недел|месяц)|к защите|без\s+(?:дообуч|обуч|доступ|интеграц)|только\s+локальн)/iu.test(text);
+  if (field === 'users') complete = FACT_PATTERNS.find(([name]) => name === 'конкретная роль')[1].test(text);
+  if (field === 'expected_result') complete = /(?:прототип|классификатор|отч[её]т|интерфейс|исходн\p{L}*\s+код|список)/iu.test(text) && /(?:отмеча|распределя|извлека|показыва|сортир|классифиц|оценк|переда)/iu.test(text);
+  if (field === 'need') complete = /(?:автомат|ускор|сократ|распредел|пересчитыва|сортир|персонализа|извлека)/iu.test(text);
+  return { ...result, points: complete ? max : Math.ceil(max / 2), fraction: complete ? 1 : .5, grade: complete ? 'specific' : 'general', evidence: complete ? result.evidence : null,
+    reason: complete ? 'Подтверждённые сведения соответствуют правилу полноты этого критерия.' : 'Частичное описание: уточните обязательные сведения критерия. Число или роль сами по себе не дают полный вес.' };
+}
 export function calculateRating(fields, confirmedFields = []) {
   fields = validateFields(fields);
   assert(Array.isArray(confirmedFields) && confirmedFields.every(k => FIELD_KEYS.includes(k)), 'VALIDATION', 'Некорректные подтверждённые поля.');
@@ -95,7 +112,7 @@ export function calculateRating(fields, confirmedFields = []) {
       const selected = relatedFields.filter(k => confirmed.has(k) && fields[k]);
       const text = selected.map(k => fields[k]).join('\n');
       // Supporting UI fields are one logical criterion; do not round each one.
-      const assessment = assessText(text, max);
+      const assessment = criterionAssessment(field, text, max, selected, fields);
       const hasUnconfirmed = relatedFields.some(k => fields[k] && !confirmed.has(k));
       const reason = assessment.reason + (hasUnconfirmed ? ' Неподтверждённые сведения не учитываются.' : '');
       if (assessment.points < max) missing.push({ field, label: FIELD_DEFS.find(f => f.key === field).label, potentialPoints: max - assessment.points, reason, question: FIELD_DEFS.find(f => f.key === field).question });
@@ -114,3 +131,5 @@ export function validateUrl(value) {
   assert(['https:', 'http:'].includes(url.protocol) && !url.username && !url.password, 'VALIDATION', 'Нужна ссылка HTTP(S) без пароля.');
   return text;
 }
+// HTML pattern uses the Unicode-sets (v) flag: literal punctuation must be escaped.
+export const PHONE_PATTERN = String.raw`[+0-9 \(\)\-]{10,20}`;

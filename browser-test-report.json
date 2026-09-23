@@ -1,78 +1,77 @@
-[
-  {
-    "name": "Каталог загружен с пятью карточками",
-    "passed": true
+{
+  "date": "2026-09-23",
+  "method": "UI interactions through browser tools; recorded observations, not an autonomous test runner",
+  "automated_browser_suite": {
+    "total": 82,
+    "passed": 82,
+    "failed": []
   },
-  {
-    "name": "Фильтр оставляет черновик К1 доступным",
-    "passed": true
-  },
-  {
-    "name": "Редактор открывается через кнопку кабинета",
-    "passed": true
-  },
-  {
-    "name": "Демо AI формирует вопросы в настоящем DOM",
-    "passed": true
-  },
-  {
-    "name": "Ответ из вопроса переносится в отдельное поле",
-    "passed": true
-  },
-  {
-    "name": "Ответы К1 дают живой балл 95, каталог остаётся 35",
-    "passed": true
-  },
-  {
-    "name": "Сохранение черновика сохраняет исходный балл каталога",
-    "passed": true
-  },
-  {
-    "name": "Подтверждение через форму обновляет каталог",
-    "passed": true
-  },
-  {
-    "name": "Новая задача публикуется с нулевым рейтингом",
-    "passed": true
-  },
-  {
-    "name": "Неопубликованный черновик не виден гостю",
-    "passed": true
-  },
-  {
-    "name": "Студент отправляет отклик через модальную форму",
-    "passed": true
-  },
-  {
-    "name": "Бизнес выбирает несколько команд вручную",
-    "passed": true
-  },
-  {
-    "name": "Выполнение через кнопку сохраняется без баллов",
-    "passed": true
-  },
-  {
-    "name": "Пользовательский HTML отображается как текст",
-    "passed": true
-  },
-  {
-    "name": "Ошибка Ollama видна и не меняет форму",
-    "passed": true
-  },
-  {
-    "name": "OpenAI без ключа показывает настройку и не меняет карточку",
-    "passed": true
-  },
-  {
-    "name": "После перезагрузки задачи, рейтинг и выполненный отклик сохранены",
-    "passed": true
-  },
-  {
-    "name": "Мобильный каталог без горизонтального переполнения",
-    "passed": true
-  },
-  {
-    "name": "Мобильное меню занимает отдельную строку",
-    "passed": true
-  }
-]
+  "ui_checks": [
+    {
+      "name": "Каталог: пять карточек, четыре уровня готовности на свежих данных",
+      "passed": true
+    },
+    {
+      "name": "Кабинет бизнеса показывает собственные задачи",
+      "passed": true
+    },
+    {
+      "name": "Демо AI: пять вопросов и явная маркировка заглушки",
+      "passed": true
+    },
+    {
+      "name": "К1: ответы дают предпросмотр 73, черновик оставляет публикацию 30",
+      "passed": true
+    },
+    {
+      "name": "Подтверждение обновляет рейтинг и сортировку",
+      "passed": true
+    },
+    {
+      "name": "Бизнес при попытке отклика получает вход студента",
+      "passed": true
+    },
+    {
+      "name": "Регистрация вымышленного студента и демонстрационное подтверждение вузом",
+      "passed": true
+    },
+    {
+      "name": "Отклик, ручной выбор бизнеса, подтверждение этапа и +10 баллов",
+      "passed": true
+    },
+    {
+      "name": "Перезагрузка сохраняет профиль, отклик и выполненный статус",
+      "passed": true
+    },
+    {
+      "name": "После итогового обновления кабинет показывает сохранённое имя и учебный период",
+      "passed": true
+    },
+    {
+      "name": "В собранных логах браузера нет ошибок и предупреждений",
+      "passed": true
+    },
+    {
+      "name": "Phone pattern: formatted number valid, alphabetic number rejected",
+      "passed": true
+    },
+    {
+      "name": "Unconfigured OpenAI and Ollama show setup guidance before analysis",
+      "passed": true
+    },
+    {
+      "name": "Explicit demo fallback returns five questions",
+      "passed": true
+    },
+    {
+      "name": "Final fallback browser run has no captured errors or warnings",
+      "passed": true
+    }
+  ],
+  "not_tested": [
+    "Live OpenAI/Ollama requests",
+    "Production authentication and student verification",
+    "Multi-device operation",
+    "Full mobile-device test matrix"
+  ]
+}

@@ -5,7 +5,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => (
 
 // ==== Глобальное состояние ====
 let role = 'guest';
-let user = { name: 'Аружан С.', university: 'КазНУ', skills: 'Python, аналитика' };
+let user = { id: 'demo-student', name: 'Аружан С.', university: 'КазНУ', skills: 'Python, аналитика' };
 let verification = 'pending';
 let verificationMethod = 'Документ';
 let current = 1;
@@ -14,8 +14,25 @@ const names = ['Контекст и потребность', 'Данные и м
 const weights = [20, 20, 15, 15, 10, 10, 10];
 
 // ==== Данные из общего модуля ====
-const { previewRating, analyzeDraft, FIELD_DEFS, FIELD_KEYS, RULES, emptyFields, PARTICIPANT_CARDS, SEED_DRAFTS, K1_ANSWERS, k1AnswerPatch } = window.SanaCore;
+const { PHONE_PATTERN, previewRating, analyzeDraft, FIELD_DEFS, FIELD_KEYS, RULES, emptyFields, PARTICIPANT_CARDS, SEED_DRAFTS, K1_ANSWERS, k1AnswerPatch } = window.SanaCore;
 const model = window.qalamModel;
+const PROFILE_KEY = 'qalam.demo-profile.v1';
+try {
+  const saved = JSON.parse(localStorage.getItem(PROFILE_KEY) || 'null');
+  if (saved && typeof saved.user?.id === 'string' && ['name','university','skills'].every(k => typeof saved.user[k] === 'string')) {
+    user = saved.user;
+    verification = ['none','pending','approved','rejected'].includes(saved.verification) ? saved.verification : 'none';
+    verificationMethod = typeof saved.method === 'string' ? saved.method : 'Документ';
+    if (typeof saved.business?.id === 'string' && typeof saved.business?.name === 'string') model.setBusiness(saved.business.id, saved.business.name);
+  }
+} catch { /* A broken demo profile does not replace task data. */ }
+model.setViewer(user.id);
+function saveProfile() {
+  try { localStorage.setItem(PROFILE_KEY, JSON.stringify({user, verification, method: verificationMethod, business: {id:model.businessId,name:model.businessName}})); }
+  catch { toast('Не удалось сохранить демонстрационный профиль. Задачи не удалены.'); }
+}
+function reviewStudent(status) { verification=status; saveProfile(); moderator(); }
+function selectBusiness(id) { model.setBusiness(id, 'Учебный бизнес · '+id); saveProfile(); businessCabinet(); }
 let tasks = [], offers = [];
 function syncData() { model.refresh(); tasks = model.tasks; offers = model.offers; }
 syncData();
@@ -228,7 +245,7 @@ function detail(id) {
         <section class="panel">
           <h3>Вы выбираете проект</h3>
           <p class="muted small">Можно откликаться на задачи разных компаний. Исполнителей выбирает представитель бизнеса.</p>
-          ${role === 'business' ? '<button onclick="go(\'cabinet\')">Управлять откликами</button>' : ''}
+          ${role === 'business' && t.own ? '<button onclick="go(\'cabinet\')">Управлять откликами</button>' : ''}
         </section>
       </aside>
     </div>
@@ -255,10 +272,6 @@ function apply(id) {
   if (role === 'pending') {
     go('cabinet');
     toast('Для отклика нужно подтвердить статус студента');
-    return;
-  }
-  if (offers.some(o => o.task === id && o.mine)) {
-    toast('Вы уже отправили отклик на эту задачу');
     return;
   }
   open(`
@@ -292,7 +305,6 @@ function submitOffer(e, id) {
   if (role !== 'student') { toast('Выберите подтверждённого студента в демонстрации'); return; }
   try {
     const d = Object.fromEntries(new FormData(e.target));
-    if (offers.some(o => o.task === id && o.mine)) throw new Error('Ваш отклик уже отправлен.');
     model.submit(id, d, user);
     syncData();
     closeModal(); go('task-' + id);
@@ -325,7 +337,7 @@ function auth(type = 'student', next = null) {
         <label>Имя<input name="first" required autocomplete="given-name"></label>
         <label>Фамилия<input name="last" required autocomplete="family-name"></label>
         <label>Email<input name="email" type="email" required autocomplete="email"></label>
-        <label>Телефон<input name="phone" type="tel" required placeholder="+7 7xx xxx xx xx" pattern="[+0-9 ()-]{10,20}"></label>
+        <label>Телефон<input name="phone" type="tel" required placeholder="+7 7xx xxx xx xx" pattern="${esc(PHONE_PATTERN)}" title="10–20 символов: цифры, плюс, пробелы, скобки или дефис"></label>
         <label class="span2">${type === 'student' ? 'Вуз или колледж' : 'Название компании'}<input name="org" required></label>
         ${type === 'student' ? '<label class="span2">Навыки<input name="skills" placeholder="Python, дизайн, аналитика"></label>' : ''}
       </div>
@@ -345,8 +357,11 @@ function auth(type = 'student', next = null) {
 function register(e, type) {
   e.preventDefault();
   let d = Object.fromEntries(new FormData(e.target));
-  user = { name: d.first + ' ' + d.last, university: d.org, skills: d.skills || 'Навыки не указаны' };
-  verification = 'none';
+  if (![d.first,d.last,d.org].every(v => v?.trim())) { toast('Заполните имя, фамилию и организацию.'); return; }
+  if (type === 'student') {
+    user = { id: crypto.randomUUID(), name: d.first.trim() + ' ' + d.last.trim(), university: d.org.trim(), skills: d.skills?.trim() || 'Навыки не указаны' };
+    verification = 'none'; model.setViewer(user.id); saveProfile();
+  } else { model.setBusiness('business-' + crypto.randomUUID(), d.org.trim()); saveProfile(); }
   closeModal();
   setRole(type === 'student' ? 'pending' : 'business');
   go('cabinet');
@@ -412,7 +427,7 @@ function cabinet() {
       <aside class="panel">
         <h2>Статус студента</h2>
         ${role === 'student'
-          ? '<div class="success">Подтверждён · учебный период 2026/27</div><p class="muted small">Повторная проверка в следующем учебном году.</p>'
+          ? `<div class="success">Подтверждён · учебный период ${esc(user.studyPeriod || '2026/27')}</div><p class="muted small">Проверка учебного периода в этой версии демонстрационная.</p>`
           : verification === 'pending'
             ? '<div class="notice">На проверке</div><p>Документ отправлен на демонстрационную проверку. Решение можно посмотреть в роли модератора.</p>'
             : verification === 'rejected'
@@ -444,7 +459,7 @@ function verifyForm() {
         <p class="small muted">PDF, JPG или PNG, до 5 МБ. Не загружайте настоящий документ: файл остаётся в браузере, на сервер не передаётся.</p>
       </div>
       <label>Вуз или колледж<input name="university" value="${esc(user.university)}" required></label>
-      <label>Учебный период<input required placeholder="2026/27"></label>
+      <label>Учебный период<input name="studyPeriod" maxlength="30" required placeholder="2026/27"></label>
       <label class="checkline">
         <input type="checkbox" required>
         Я использую тестовые данные и понимаю условия демонстрации.
@@ -460,12 +475,14 @@ function sendVerification(e) {
   const f = e.target.doc.files[0];
   const m = e.target.elements['method'].value;
   if (m !== 'Подтверждение вузом' && !f) { toast('Выберите тестовый файл'); return; }
-  if (f && (f.size > 5 * 1024 * 1024 || !(/\.(pdf|png|jpe?g)$/i.test(f.name)))) {
+  if (m !== 'Подтверждение вузом' && f && (f.size > 5 * 1024 * 1024 || !(/\.(pdf|png|jpe?g)$/i.test(f.name)))) {
     toast('Нужен PDF, JPG или PNG до 5 МБ'); return;
   }
   verification = 'pending';
   verificationMethod = m;
   user.university = e.target.university.value;
+  user.studyPeriod = e.target.elements.studyPeriod.value.trim();
+  saveProfile();
   closeModal();
   cabinet();
   toast('Заявка создана в памяти макета');
@@ -489,8 +506,8 @@ function moderator() {
       <div class="notice">Тестовое решение не означает проверку через государственную систему. Файлы и персональные данные на сервер не отправляются.</div>
       ${verification === 'pending' ? `
         <div class="actions">
-          <button class="primary" onclick="verification='approved';toast('Статус подтверждён в макете');moderator()">Подтвердить</button>
-          <button onclick="verification='rejected';moderator()">Вернуть: не виден учебный период</button>
+          <button class="primary" onclick="reviewStudent('approved');toast('Статус подтверждён в макете')">Подтвердить</button>
+          <button onclick="reviewStudent('rejected')">Вернуть: не виден учебный период</button>
         </div>
       ` : ''}
       <div class="actions">
@@ -503,14 +520,15 @@ function moderator() {
 // ==== Кабинет бизнеса ====
 function businessCabinet() {
   syncData();
-  const own = tasks;
+  const own = tasks.filter(t => t.own);
 
   $('#app').innerHTML = `
     <div class="top">
       <div>
         <div class="eyebrow">КАБИНЕТ БИЗНЕСА · ДЕМОНСТРАЦИЯ</div>
         <h1>Задачи и предложения</h1>
-        <p class="muted">Вы решаете, с кем продолжить работу. В демонстрации доступны все учебные задачи.</p>
+        <p class="muted">${esc(model.businessName)}. Управление доступно только задачами выбранного бизнеса.</p>
+        <label>Учебный бизнес<select onchange="selectBusiness(this.value)">${['К1','К2','К3','К4','К5'].map(id=>`<option value="${id}" ${model.businessId===id?'selected':''}>${id}</option>`).join('')}${!['К1','К2','К3','К4','К5'].includes(model.businessId)?`<option value="${esc(model.businessId)}" selected>${esc(model.businessName)}</option>`:''}</select></label>
       </div>
       <button class="primary" onclick="go('editor')">+ Создать задачу</button>
     </div>
@@ -533,7 +551,7 @@ function businessCabinet() {
               <p class="small">${o.isDemoLink ? 'Демонстрационная ссылка-заглушка' : 'Прототип'}: <a href="${esc(o.link)}" target="_blank" rel="noopener noreferrer">${esc(o.link)}</a></p>
               <p class="status">${esc(o.status)}</p>
               <div class="actions">
-                ${o.completedAt ? `<span class="success">Выполнено · ${esc(new Date(o.completedAt).toLocaleDateString('ru'))}</span>` : `
+                ${o.completedAt ? `<span class="success">Выполнено · ${esc(new Date(o.completedAt).toLocaleDateString('ru'))} · +${o.progressPoints} баллов команде</span>` : `
                   <button class="primary" onclick="decision(${o.id},'Выбран')">Выбрать</button>
                   <button onclick="decision(${o.id},'Отклонён')">Отклонить</button>
                   ${o.status === 'Выбран' ? `<button onclick="progress(${o.id})">Отметить как выполнено</button>` : ''}
@@ -555,7 +573,7 @@ function decision(id, status) {
 
 function progress(id) {
   if (role !== 'business') return;
-  try { model.complete(id); businessCabinet(); toast('Выполнение подтверждено. Баллы за этапы не начисляются.'); }
+  try { model.complete(id); businessCabinet(); toast('Этап подтверждён: +10 баллов команде однократно. Рейтинг задачи не изменён.'); }
   catch (error) { toast(error.message); }
 }
 
@@ -570,6 +588,7 @@ function editor(id = null) {
   syncData();
   const t = id === null ? null : tasks.find(t => t.id === id);
   if (id !== null && !t) { toast('Задача не найдена'); return; }
+  if (t && !t.own) { toast('Этой задачей управляет другой бизнес.'); return; }
   editorId = id; editorRevision++; aiRun++; lastQuestions = []; aiCandidate = null;
   const fields = t?.draftFields || emptyFields();
   $('#app').innerHTML = `
@@ -600,13 +619,14 @@ function editor(id = null) {
             <p class="small muted">OpenAI использует API-ключ, настроенный на сервере, и кредиты вашего проекта. Отправка запроса передаст описание и заполненные поля в OpenAI. Демо работает без модели.</p>
             <button id="askAI" onclick="questions()" type="button">Разобрать запрос и задать вопросы</button>
             <div id="aiStatus" class="small muted" role="status"></div>
+            <button id="demoFallback" type="button" hidden onclick="useDemoAI()">Продолжить в демо — без модели</button>
             <div id="questions"></div>
             <div id="aiCandidate"></div>
             ${(t?.sourceRef === 'К1' || !t) ? `<details class="example-answers"><summary>Ответы заказчика для примера К1</summary><p class="small muted">Учебные ответы из материалов участника 1.</p>${K1_ANSWERS.map((a, i) => `<button type="button" onclick="applyK1Answer(${i})">Ответ ${i + 1}</button>`).join('')}</details>` : ''}
           </section>
           <section class="panel">
             <h2>Рейтинг за содержание</h2>
-            <p class="small muted">0 — пусто или менее 10 символов; половина веса с округлением вверх — общее описание; полный вес — распознаны число, роль, источник, срок или контакт. Проверьте смысл сведений самостоятельно.</p>
+            <p class="small muted">0 — пусто, заглушка или менее 10 символов. Частичное описание даёт половину веса с округлением вверх. Полный вес зависит от критерия: для данных нужен источник, для приёмки — метрика и числовая цель, для связи — контакт, консультации и обратная связь. Смысл проверяет бизнес.</p>
             <p>Подтверждённый рейтинг: <b id="confirmedScore">${t?.score || 0}/100</b></p>
             <div id="scoreDetails"></div>
             <label class="checkline"><input name="confirmed" type="checkbox" required>Я проверил поля и подтверждаю сведения.</label>
@@ -629,6 +649,7 @@ function invalidateAI() {
   if ($('#aiCandidate')) $('#aiCandidate').replaceChildren();
   if ($('#askAI')) { $('#askAI').disabled = false; $('#askAI').textContent = 'Разобрать запрос и задать вопросы'; }
   if ($('#aiStatus')) $('#aiStatus').textContent = '';
+  if ($('#demoFallback')) $('#demoFallback').hidden = true;
 }
 function editorChanged() {
   editorRevision++; invalidateAI();
@@ -655,6 +676,12 @@ function applyK1Answer(index) {
   editorChanged(); toast('Ответ заказчика внесён. Проверьте и подтвердите изменения.');
 }
 
+function useDemoAI() {
+  $('#aiMode').value = 'demo';
+  invalidateAI();
+  return questions();
+}
+
 async function questions() {
   const form = $('#editorform');
   const revision = editorRevision, run = ++aiRun;
@@ -662,6 +689,7 @@ async function questions() {
   const button = $('#askAI');
   button.disabled = true; button.textContent = 'Обработка…';
   $('#aiStatus').textContent = 'Подготавливаем вопросы…';
+  $('#demoFallback').hidden = true;
   try {
     const result = await analyzeDraft({ text: form.elements.rawText.value, answers, mode: $('#aiMode').value });
     if (run !== aiRun || revision !== editorRevision || $('#editorform') !== form) return;
@@ -671,7 +699,11 @@ async function questions() {
     const additions = FIELD_KEYS.filter(k => !answers[k] && result.card[k]);
     $('#aiCandidate').innerHTML = additions.length ? `<details open><summary>Предложенные сведения</summary>${additions.map(k => `<p class="small"><b>${esc(FIELD_DEFS.find(f => f.key === k).label)}:</b> ${esc(result.card[k])}</p>`).join('')}<button type="button" onclick="applyAICard()">Перенести предложения в карточку</button></details>` : '';
   } catch (error) {
-    if (run === aiRun && $('#editorform') === form) { $('#aiStatus').textContent = error.message; toast(error.message); }
+    if (run === aiRun && $('#editorform') === form) {
+      $('#aiStatus').textContent = error.message;
+      $('#demoFallback').hidden = $('#aiMode').value === 'demo';
+      toast(error.message);
+    }
   } finally {
     if (run === aiRun && $('#editorform') === form) { button.disabled = false; button.textContent = 'Разобрать запрос и задать вопросы'; }
   }
