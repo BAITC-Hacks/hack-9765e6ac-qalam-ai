@@ -318,3 +318,18 @@ a { color: var(--blue); }
   .sidebar { grid-template-columns: 1fr; }
   .profile { flex-wrap: wrap; }
 }
+/* Integration: existing visual style, additional editor controls. */
+.editor-aside { align-self: start; }
+.rating-detail { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.rating-detail summary { cursor: pointer; font-size: 14px; }
+.rating-detail summary b { float: right; }
+.rating-detail p { margin: 10px 0; }
+.example-answers { margin-top: 20px; }
+.example-answers button { margin: 5px; font-size: 13px; }
+#aiStatus { margin-top: 14px; }
+#aiCandidate { overflow-wrap: anywhere; }
+.detailrow p { white-space: pre-line; overflow-wrap: anywhere; }
+button:disabled { cursor: wait; opacity: .6; }
+@media (max-width: 950px) {
+  nav { flex: 0 0 100%; min-width: 0; }
+}

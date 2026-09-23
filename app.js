@@ -13,22 +13,18 @@ let current = 1;
 const names = ['Контекст и потребность', 'Данные и материалы', 'Ожидаемый результат', 'Критерии успеха', 'Ограничения', 'Пользователи', 'Связь с бизнесом'];
 const weights = [20, 20, 15, 15, 10, 10, 10];
 
-// ==== Данные ====
-let tasks = [
-  { id: 1, company: 'Qadam Support', mark: 'Q', title: 'Ускорить обработку заявок поддержки', topic: 'Автоматизация', desc: 'Заявки обрабатываются вручную и долго. Помогите уточнить задачу и предложить решение.', tags: ['Python', 'NLP'], score: 10, parts: [10, 0, 0, 0, 0, 0, 0], fields: ['Заявки обрабатываются вручную, долго.', '', '', '', '', '', ''], published: true },
-  { id: 2, company: 'Route KZ', mark: 'R', title: 'Собрать удобные маршруты для курьеров', topic: 'Логистика', desc: 'Диспетчеры ищут способ сократить время доставки. Есть CSV с заказами за три месяца.', tags: ['Алгоритмы', 'React'], score: 65, parts: [15, 15, 10, 5, 10, 5, 5], fields: ['Курьеры теряют время на маршрутах; нужно сократить время доставки.', 'CSV заказов за 3 месяца; доступ нужно уточнить.', 'Оптимизатор порядка остановок.', 'Среднее время маршрута; порог не указан.', '5 дней, без платных картографических API.', 'Диспетчеры.', 'Координатор логистики; формат встреч нужно уточнить.'], published: true },
-  { id: 3, company: 'HireLab', mark: 'H', title: 'Извлекать профессиональные навыки из резюме', topic: 'HR', desc: 'Помогите HR быстро находить навыки в учебной базе резюме. Финальное решение принимает человек.', tags: ['Python', 'Парсинг'], score: 85, parts: [20, 20, 15, 10, 10, 5, 5], fields: ['Ручная проверка занимает день в неделю; нужно ускорить поиск навыков.', '400 синтетических PDF, локальная папка.', 'Прототип извлечения навыков, код и CSV.', 'Точность не ниже 85%; выборка не определена.', '4 дня, без чувствительных признаков.', 'HR-специалисты.', 'HR-координатор; срок ответа не указан.'], published: true },
-  { id: 4, company: 'QazPack', mark: 'P', title: 'Находить дефекты упаковки по фотографии', topic: 'Производство', desc: 'Готовая постановка для команды с навыками компьютерного зрения. Без обучения собственной модели.', tags: ['OpenCV', 'Computer Vision'], score: 100, parts: [20, 20, 15, 15, 10, 10, 10], fields: ['Ручной контроль; брак вырос с 2% до 6%. Нужна автоматическая отметка дефектов.', '2000 размеченных JPG и регламент ОТК, локальный доступ.', 'Прототип с пояснением дефекта, код и инструкция.', '14 правильных классификаций из 20 отложенных фото по разметке ОТК.', '5 часов, без обучения или дообучения.', 'Операторы ОТК загружают фото и проверяют результат.', 'Начальник ОТК, qa@example.com; видеоконсультации по запросу, ответ за день.'], published: true },
-  { id: 5, company: 'Sana Market', mark: 'S', title: 'Сделать рассылки полезнее для клиентов', topic: 'Маркетинг', desc: 'Одинаковые письма получают мало ответов. Бизнес открыт к предложениям и уточнениям.', tags: ['Аналитика', 'Маркетинг'], score: 45, parts: [10, 10, 5, 5, 5, 5, 5], fields: ['Одинаковые письма всем, низкий отклик.', 'CRM в CSV; объём и доступ не указаны.', 'Прототип; функции нужно уточнить.', 'Доля ответов; порог не указан.', '4 дня.', 'Маркетологи.', 'Руководитель маркетинга; порядок связи не указан.'], published: true }
-];
-
-let offers = [
-  { id: 1, task: 1, name: 'Данияр К.', team: 'ByteForge', university: 'КБТУ', skills: 'Python · NLP', idea: 'Классификатор заявок по теме и приоритету.', plan: 'Примеры → классификация → проверка', days: '3 дня', link: 'https://example.com/demo/byteforge', status: 'Ожидает решения' },
-  { id: 2, task: 2, name: 'Айдана М.', team: 'RouteMind', university: 'Satbayev University', skills: 'React · алгоритмы', idea: 'Оптимизация порядка остановок.', plan: 'CSV → алгоритм → список', days: '5 дней', link: 'https://example.com/demo/routemind', status: 'Ожидает решения' },
-  { id: 3, task: 3, name: 'Алихан Т.', team: 'HireLens', university: 'КазНУ', skills: 'Python · парсинг', idea: 'Извлечение навыков для ручного решения HR.', plan: 'PDF → навыки → CSV', days: '4 дня', link: 'https://example.com/demo/hirelens', status: 'Ожидает решения' },
-  { id: 4, task: 4, name: 'Мадина А.', team: 'VisionQA', university: 'Astana IT University', skills: 'OpenCV', idea: 'Готовая модель без обучения.', plan: 'Модель → загрузка → 20 фото', days: '5 часов', link: 'https://example.com/demo/visionqa', status: 'Ожидает решения' },
-  { id: 5, task: 5, name: 'Ерасыл Н.', team: 'ReachAI', university: 'SDU', skills: 'Аналитика', idea: 'Уточнить цель и предложить сегментацию.', plan: 'Цель → данные → прототип', days: '4 дня', link: 'https://example.com/demo/reachai', status: 'Ожидает решения' }
-];
+// ==== Данные из общего модуля ====
+const { previewRating, analyzeDraft, FIELD_DEFS, FIELD_KEYS, RULES, emptyFields, PARTICIPANT_CARDS, SEED_DRAFTS, K1_ANSWERS, k1AnswerPatch } = window.SanaCore;
+const model = window.qalamModel;
+let tasks = [], offers = [];
+function syncData() { model.refresh(); tasks = model.tasks; offers = model.offers; }
+syncData();
+let editorId = null;
+let editorRevision = 0;
+let aiRun = 0;
+let lastQuestions = [];
+let aiCandidate = null;
+let toastTimer;
 
 // ==== Утилиты ====
 const level = n => n < 40 ? 'Черновик' : n < 70 ? 'Рабочая' : n < 90 ? 'Готовая' : 'Приоритетная';
@@ -36,7 +32,8 @@ const level = n => n < 40 ? 'Черновик' : n < 70 ? 'Рабочая' : n <
 function toast(s) {
   $('#toast').textContent = s;
   $('#toast').hidden = false;
-  setTimeout(() => $('#toast').hidden = true, 4000);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $('#toast').hidden = true, 7000);
 }
 
 function open(html) {
@@ -45,14 +42,16 @@ function open(html) {
 }
 
 function closeModal() { $('#modal').close(); }
-function go(v) { location.hash = v; render(); }
+function go(v) { history.pushState(null, '', '#' + v); render(); }
 function setRole(r) { role = r; $('#role').value = r; render(); }
 
 $('#role').onchange = e => setRole(e.target.value);
 window.onhashchange = render;
+window.onpopstate = render;
 
 // ==== Роутер ====
 function render() {
+  syncData();
   const route = location.hash.slice(1) || 'catalog';
 
   $('#nav').innerHTML = [
@@ -63,7 +62,7 @@ function render() {
 
   $('#account').textContent =
     role === 'guest' ? 'Войти / Регистрация' :
-    role === 'business' ? 'Qadam · Бизнес' :
+    role === 'business' ? 'Бизнес · Демо' :
     role === 'moderator' ? 'Модератор' :
     user.name;
 
@@ -143,7 +142,7 @@ function drawCards() {
   $('#cards').innerHTML = list.map(t => `
     <article class="card">
       <div class="company">
-        <span class="avatar">${t.mark}</span>
+        <span class="avatar">${esc(t.mark)}</span>
         <div>
           <b>${esc(t.company)}</b>
           <div class="muted small">${esc(t.topic)}</div>
@@ -168,7 +167,7 @@ function drawCards() {
 // ==== Детали задачи ====
 function detail(id) {
   let t = tasks.find(t => t.id === id);
-  if (!t) { go('catalog'); return; }
+  if (!t || !t.published) { go('catalog'); return; }
   current = id;
 
   $('#app').innerHTML = `
@@ -199,9 +198,9 @@ function detail(id) {
               <div class="company">
                 <span class="avatar">${esc(o.name[0])}</span>
                 <div>
-                  <b>${esc(o.name)} · ${esc(o.team)}</b>
+                  <b>${esc(o.name === o.team ? o.team : o.name + ' · ' + o.team)}</b>
                   <p>${esc(o.university)} · ${esc(o.skills)}</p>
-                  <span class="badge">Студент подтверждён</span>
+                  <span class="badge">Демонстрационный профиль команды</span>
                 </div>
               </div>
               <button onclick="profile(${o.id})">Профиль</button>
@@ -229,7 +228,7 @@ function detail(id) {
         <section class="panel">
           <h3>Вы выбираете проект</h3>
           <p class="muted small">Можно откликаться на задачи разных компаний. Исполнителей выбирает представитель бизнеса.</p>
-          ${role === 'business' && id === 1 ? '<button onclick="go(\'cabinet\')">Управлять откликами</button>' : ''}
+          ${role === 'business' ? '<button onclick="go(\'cabinet\')">Управлять откликами</button>' : ''}
         </section>
       </aside>
     </div>
@@ -241,10 +240,10 @@ function profile(id) {
   open(`
     <h2>${esc(o.name)}</h2>
     <p>${esc(o.university)} · ${esc(o.team)}</p>
-    <span class="badge">Студент подтверждён</span>
+    <span class="badge">Демонстрационный профиль команды</span>
     <h3>Навыки</h3>
     <p>${esc(o.skills)}</p>
-    <p class="muted small">Публичный профиль. Документ о статусе студента доступен только модератору.</p>
+    <p class="muted small">Публичный профиль. Проверка документов в этом MVP имитируется.</p>
   `);
 }
 
@@ -290,25 +289,15 @@ function apply(id) {
 
 function submitOffer(e, id) {
   e.preventDefault();
-  let d = Object.fromEntries(new FormData(e.target));
-  if (!/^https?:\/\//i.test(d.link)) {
-    toast('Используйте ссылку http или https');
-    return;
-  }
-  offers.push({
-    ...d,
-    id: Date.now(),
-    task: id,
-    name: user.name,
-    university: user.university,
-    skills: user.skills,
-    team: d.team || 'Самостоятельно',
-    mine: true,
-    status: 'Ожидает решения'
-  });
-  closeModal();
-  go('task-' + id);
-  toast('Отклик отправлен. Можно выбрать ещё одну задачу.');
+  if (role !== 'student') { toast('Выберите подтверждённого студента в демонстрации'); return; }
+  try {
+    const d = Object.fromEntries(new FormData(e.target));
+    if (offers.some(o => o.task === id && o.mine)) throw new Error('Ваш отклик уже отправлен.');
+    model.submit(id, d, user);
+    syncData();
+    closeModal(); go('task-' + id);
+    toast('Отклик сохранён. Решение принимает бизнес.');
+  } catch (error) { toast(error.message); }
 }
 
 // ==== Auth ====
@@ -316,7 +305,7 @@ function auth(type = 'student', next = null) {
   if (role !== 'guest' && arguments.length === 0) {
     open(`
       <h2>Ваш профиль</h2>
-      <p>${role === 'business' ? 'Qadam · Бизнес' : esc(user.name)}</p>
+      <p>${role === 'business' ? 'Бизнес · Демо' : esc(user.name)}</p>
       <div class="actions">
         <button onclick="closeModal();go('cabinet')">Открыть кабинет</button>
         <button onclick="closeModal();setRole('guest');go('catalog')">Выйти</button>
@@ -373,10 +362,10 @@ function businesses() {
     <h1>Бизнесы на платформе</h1>
     <p class="muted">Изучайте задачи компаний и публичные профили участников.</p>
     <div class="cards">
-      ${tasks.map(t => `
+      ${tasks.filter(t => t.published).map(t => `
         <article class="card">
           <div class="company">
-            <span class="avatar">${t.mark}</span>
+            <span class="avatar">${esc(t.mark)}</span>
             <h3>${esc(t.company)}</h3>
           </div>
           <p>${esc(t.topic)}</p>
@@ -513,14 +502,15 @@ function moderator() {
 
 // ==== Кабинет бизнеса ====
 function businessCabinet() {
-  const own = tasks.filter(t => t.id === 1 || t.own);
+  syncData();
+  const own = tasks;
 
   $('#app').innerHTML = `
     <div class="top">
       <div>
-        <div class="eyebrow">КАБИНЕТ БИЗНЕСА · QADAM</div>
+        <div class="eyebrow">КАБИНЕТ БИЗНЕСА · ДЕМОНСТРАЦИЯ</div>
         <h1>Задачи и предложения</h1>
-        <p class="muted">Вы решаете, с кем продолжить работу.</p>
+        <p class="muted">Вы решаете, с кем продолжить работу. В демонстрации доступны все учебные задачи.</p>
       </div>
       <button class="primary" onclick="go('editor')">+ Создать задачу</button>
     </div>
@@ -531,23 +521,23 @@ function businessCabinet() {
             <div>
               <h2>${esc(t.title)}</h2>
               <span class="badge">${t.score}/100 · ${level(t.score)}</span>
-              <span class="muted small">${t.published ? 'Опубликована' : 'Не опубликована'}</span>
+              <span class="muted small">${t.published ? 'Опубликована' : 'Не опубликована'}${t.hasDraft ? ' · Есть неподтверждённые правки' : ''}</span>
             </div>
             <button onclick="editor(${t.id})">Дополнить задачу</button>
           </div>
           ${offers.filter(o => o.task === t.id).map(o => `
             <div class="detailrow">
-              <h3>${esc(o.name)} · ${esc(o.team)}</h3>
+              <h3>${esc(o.name === o.team ? o.team : o.name + ' · ' + o.team)}</h3>
               <p>${esc(o.idea)}</p>
               <p class="small muted">${esc(o.plan)} · ${esc(o.days)}</p>
-              <p class="small">Прототип: <a href="${esc(o.link)}" target="_blank" rel="noopener">${esc(o.link)}</a></p>
+              <p class="small">${o.isDemoLink ? 'Демонстрационная ссылка-заглушка' : 'Прототип'}: <a href="${esc(o.link)}" target="_blank" rel="noopener noreferrer">${esc(o.link)}</a></p>
               <p class="status">${esc(o.status)}</p>
               <div class="actions">
-                <button class="primary" onclick="decision(${o.id},'Выбран')">Выбрать</button>
-                <button onclick="decision(${o.id},'Отклонён')">Отклонить</button>
-                ${o.status === 'Выбран'
-                  ? `<button onclick="progress(${o.id})">${o.progress ? 'Этап подтверждён · +10' : 'Подтвердить тестовый этап'}</button>`
-                  : ''}
+                ${o.completedAt ? `<span class="success">Выполнено · ${esc(new Date(o.completedAt).toLocaleDateString('ru'))}</span>` : `
+                  <button class="primary" onclick="decision(${o.id},'Выбран')">Выбрать</button>
+                  <button onclick="decision(${o.id},'Отклонён')">Отклонить</button>
+                  ${o.status === 'Выбран' ? `<button onclick="progress(${o.id})">Отметить как выполнено</button>` : ''}
+                `}
               </div>
             </div>
           `).join('') || '<p class="muted">Откликов пока нет.</p>'}
@@ -557,142 +547,166 @@ function businessCabinet() {
   `;
 }
 
-function decision(id, s) {
-  offers.find(o => o.id === id).status = s;
-  businessCabinet();
-  toast('Решение сохранено в макете');
+function decision(id, status) {
+  if (role !== 'business') return;
+  try { model.decide(id, status === 'Выбран' ? 'accepted' : 'rejected'); businessCabinet(); toast('Решение сохранено'); }
+  catch (error) { toast(error.message); }
 }
 
 function progress(id) {
-  let o = offers.find(o => o.id === id);
-  if (o.progress) { toast('Баллы за этот этап уже начислены'); return; }
-  o.progress = true;
-  businessCabinet();
-  toast('Тестовый этап подтверждён: +10 команде. Рейтинг задачи не изменён.');
+  if (role !== 'business') return;
+  try { model.complete(id); businessCabinet(); toast('Выполнение подтверждено. Баллы за этапы не начисляются.'); }
+  catch (error) { toast(error.message); }
 }
 
-// ==== Редактор задачи ====
-const checks = [
-  ['Назван процесс', 'Названа проблема', 'Есть исходная числовая характеристика', 'Указано требуемое изменение'],
-  ['Источник', 'Формат', 'Объём', 'Условия доступа'],
-  ['Конечный продукт', 'Функция', 'Формат передачи'],
-  ['Метрика', 'Порог приёмки', 'Процедура или выборка'],
-  ['Срок', 'Техническая граница'],
-  ['Группа пользователей', 'Сценарий использования'],
-  ['Контакт и канал', 'Консультации и срок ответа']
-];
+// ==== Редактор: поля, AI и подтверждение из модуля участника 3 ====
+function fieldControl(key, fields) {
+  const def = FIELD_DEFS.find(f => f.key === key);
+  return `<label>${esc(def.label)}<textarea name="${key}" maxlength="4000" oninput="editorChanged()">${esc(fields[key] || '')}</textarea></label>`;
+}
 
 function editor(id = null) {
   if (role !== 'business') { auth('business'); return; }
-  let t = tasks.find(t => t.id === id);
-  if (t && !t.own && t.id !== 1) { toast('Можно редактировать только свои задачи'); return; }
-
+  syncData();
+  const t = id === null ? null : tasks.find(t => t.id === id);
+  if (id !== null && !t) { toast('Задача не найдена'); return; }
+  editorId = id; editorRevision++; aiRun++; lastQuestions = []; aiCandidate = null;
+  const fields = t?.draftFields || emptyFields();
   $('#app').innerHTML = `
     <button class="back" onclick="go('cabinet')">← Мои задачи</button>
     <div class="top">
-      <div>
-        <div class="eyebrow">КОНСТРУКТОР БИЗНЕС-ЗАДАЧИ</div>
-        <h1>${t ? 'Дополните постановку' : 'Создайте задачу'}</h1>
-      </div>
-      <div><span class="number" id="liveScore">${t ? t.score : 0}</span><span class="muted"> / 100</span></div>
+      <div><div class="eyebrow">КОНСТРУКТОР БИЗНЕС-ЗАДАЧИ</div><h1>${t ? 'Дополните постановку' : 'Создайте задачу'}</h1></div>
+      <div><div class="small muted">Предварительный рейтинг</div><span class="number" id="liveScore">0</span><span class="muted"> / 100</span></div>
     </div>
-    <form id="editorform" onsubmit="saveTask(event,${id})">
+    <form id="editorform" onsubmit="saveTask(event)">
       <div class="two">
-        <section class="panel">
-          <label>Название<input name="title" required value="${esc(t?.title || '')}"></label>
-          <label>Направление
-            <select name="topic">
-              ${['Автоматизация', 'Логистика', 'HR', 'Производство', 'Маркетинг'].map(n => `<option ${t?.topic === n ? 'selected' : ''}>${n}</option>`).join('')}
-            </select>
-          </label>
-          ${names.map((n, i) => `
-            <label>${n}<textarea name="f${i}" oninput="calcEditor()">${esc(t?.fields[i] || '')}</textarea></label>
-            <div>
-              ${checks[i].map((c, j) => `
-                <label class="checkline small">
-                  <input type="checkbox" name="c${i}_${j}" onchange="calcEditor()" ${t && j < t.parts[i] / 5 ? 'checked' : ''}>
-                  ${c} · 5
-                </label>
-              `).join('')}
-            </div>
-          `).join('')}
-        </section>
-        <aside class="stack" style="align-self:start">
+        <div class="stack">
           <section class="panel">
-            <h2>Помощь с уточнениями</h2>
-            <p class="muted small">Демонстрационный локальный помощник. Внешний AI не подключён.</p>
-            <button onclick="questions()" type="button">Получить вопросы</button>
-            <div id="questions"></div>
+            <h2>Исходный запрос</h2>
+            <label>Опишите задачу своими словами<textarea name="rawText" maxlength="12000" oninput="editorChanged()" placeholder="Что происходит сейчас и какую помощь вы ищете?">${esc(t?.rawText || '')}</textarea></label>
+            ${!t ? `<div class="actions"><button type="button" onclick="loadExample(0)">Пример К1</button><button type="button" onclick="loadExample(3)">Пример К4</button></div>` : ''}
           </section>
           <section class="panel">
-            <h3>Рейтинг за факты</h3>
-            <p class="small muted">Отмечайте только сведения, которые действительно есть в тексте. Каждый подпункт — 5 баллов. После редактирования подтвердите данные.</p>
-            <label class="checkline">
-              <input name="confirmed" type="checkbox" required>
-              Я проверил поля и подтверждаю сведения.
-            </label>
-            <label class="checkline">
-              <input name="publish" type="checkbox" ${t?.published ? 'checked' : ''}>
-              Опубликовать в общем каталоге
-            </label>
-            <button class="primary" style="width:100%;margin-top:20px">Подтвердить и сохранить</button>
-            <p class="small muted">Можно публиковать с любым рейтингом. Предварительный балл станет действующим после сохранения.</p>
+            <h2>Карточка задачи</h2>
+            <label>Название<input name="title" minlength="3" maxlength="160" required value="${esc(fields.title)}" oninput="editorChanged()"></label>
+            <label>Направление<input name="topic" maxlength="160" value="${esc(fields.topic)}" oninput="editorChanged()" placeholder="Например, Логистика"></label>
+            ${RULES.map(r => `<div class="detailrow"><h3>${esc(r.label)}</h3>${[...new Set(r.parts.flatMap(p => p[2]))].map(key => fieldControl(key, fields)).join('')}</div>`).join('')}
+          </section>
+        </div>
+        <aside class="stack editor-aside">
+          <section class="panel">
+            <h2>Помощник</h2>
+            <label>Режим<select id="aiMode" onchange="invalidateAI()"><option value="demo">Демо — без модели</option><option value="openai">OpenAI — облачная модель</option><option value="ollama">Ollama — локальная модель</option></select></label>
+            <p class="small muted">OpenAI использует API-ключ, настроенный на сервере, и кредиты вашего проекта. Отправка запроса передаст описание и заполненные поля в OpenAI. Демо работает без модели.</p>
+            <button id="askAI" onclick="questions()" type="button">Разобрать запрос и задать вопросы</button>
+            <div id="aiStatus" class="small muted" role="status"></div>
+            <div id="questions"></div>
+            <div id="aiCandidate"></div>
+            ${(t?.sourceRef === 'К1' || !t) ? `<details class="example-answers"><summary>Ответы заказчика для примера К1</summary><p class="small muted">Учебные ответы из материалов участника 1.</p>${K1_ANSWERS.map((a, i) => `<button type="button" onclick="applyK1Answer(${i})">Ответ ${i + 1}</button>`).join('')}</details>` : ''}
+          </section>
+          <section class="panel">
+            <h2>Рейтинг за содержание</h2>
+            <p class="small muted">0 — пусто или менее 10 символов; половина веса с округлением вверх — общее описание; полный вес — распознаны число, роль, источник, срок или контакт. Проверьте смысл сведений самостоятельно.</p>
+            <p>Подтверждённый рейтинг: <b id="confirmedScore">${t?.score || 0}/100</b></p>
+            <div id="scoreDetails"></div>
+            <label class="checkline"><input name="confirmed" type="checkbox" required>Я проверил поля и подтверждаю сведения.</label>
+            ${t?.published ? '<p class="hint">Задача опубликована. Подтверждение обновит карточку и рейтинг в каталоге.</p>' : '<label class="checkline"><input name="publish" type="checkbox">Опубликовать в общем каталоге</label>'}
+            <div class="actions"><button type="button" onclick="saveDraft()">Сохранить черновик</button><button class="primary">Подтвердить и сохранить</button></div>
+            <p class="small muted">Черновик не меняет опубликованную карточку. Публиковать и откликаться можно при любом рейтинге.</p>
           </section>
         </aside>
       </div>
-    </form>
-  `;
+    </form>`;
   calcEditor();
 }
 
+function readEditor() {
+  const form = $('#editorform');
+  return Object.fromEntries(FIELD_KEYS.map(k => [k, form.elements[k].value]));
+}
+function invalidateAI() {
+  aiRun++; aiCandidate = null;
+  if ($('#aiCandidate')) $('#aiCandidate').replaceChildren();
+  if ($('#askAI')) { $('#askAI').disabled = false; $('#askAI').textContent = 'Разобрать запрос и задать вопросы'; }
+  if ($('#aiStatus')) $('#aiStatus').textContent = '';
+}
+function editorChanged() {
+  editorRevision++; invalidateAI();
+  $('#editorform').elements.confirmed.checked = false;
+  calcEditor();
+}
 function calcEditor() {
-  let f = $('#editorform');
-  let sum = 0;
-  names.forEach((_, i) => {
-    let has = f.elements['f' + i].value.trim();
-    checks[i].forEach((_, j) => {
-      let c = f.elements[`c${i}_${j}`];
-      c.disabled = !has;
-      if (!has) c.checked = false;
-      if (c.checked) sum += 5;
-    });
-  });
-  $('#liveScore').textContent = sum;
-  return sum;
+  const rating = previewRating(readEditor());
+  $('#liveScore').textContent = rating.score;
+  $('#scoreDetails').innerHTML = rating.breakdown.map(r => `<details class="rating-detail"><summary>${esc(r.label)} <b>${r.points}/${r.max}</b></summary>${r.parts.map(p => `<p class="small">${esc(FIELD_DEFS.find(f => f.key === p.field).label)}: ${p.points}/${p.max}. ${esc(p.reason)}</p>`).join('')}</details>`).join('');
+  return rating;
+}
+function loadExample(index) {
+  const form = $('#editorform');
+  const fields = { ...emptyFields(), ...PARTICIPANT_CARDS[index] };
+  for (const key of FIELD_KEYS) form.elements[key].value = fields[key];
+  form.elements.rawText.value = SEED_DRAFTS[index].text;
+  editorChanged(); toast('Пример загружен в форму. Сохраните и подтвердите его вручную.');
+}
+function applyK1Answer(index) {
+  const form = $('#editorform');
+  if (form.elements.title.value !== PARTICIPANT_CARDS[0].title) { toast('Эти ответы относятся к примеру К1. Сначала откройте К1.'); return; }
+  for (const [key, value] of Object.entries(k1AnswerPatch(index))) form.elements[key].value = value;
+  editorChanged(); toast('Ответ заказчика внесён. Проверьте и подтвердите изменения.');
 }
 
-function questions() {
-  const qs = [
-    'Кто будет пользоваться решением и как?',
-    'Какие данные доступны: формат, объём, условия доступа?',
-    'Как измерить успех и какой порог означает приёмку?',
-    'Какой результат передать и в какой срок?',
-    'Кто со стороны бизнеса отвечает на вопросы?'
-  ];
-  $('#questions').innerHTML = qs.map(s => `<div class="step small">${s}</div>`).join('');
+async function questions() {
+  const form = $('#editorform');
+  const revision = editorRevision, run = ++aiRun;
+  const answers = Object.fromEntries(Object.entries(readEditor()).filter(([, value]) => value.trim()));
+  const button = $('#askAI');
+  button.disabled = true; button.textContent = 'Обработка…';
+  $('#aiStatus').textContent = 'Подготавливаем вопросы…';
+  try {
+    const result = await analyzeDraft({ text: form.elements.rawText.value, answers, mode: $('#aiMode').value });
+    if (run !== aiRun || revision !== editorRevision || $('#editorform') !== form) return;
+    aiCandidate = result.card; lastQuestions = result.questions;
+    $('#aiStatus').textContent = result.warning;
+    $('#questions').innerHTML = lastQuestions.map((q, i) => `<label class="step small">${esc(q.question)}<textarea id="answer${i}" maxlength="${['title','topic'].includes(q.field) ? 160 : 4000}" placeholder="Ваш ответ" oninput="invalidateCandidateOnly()"></textarea></label>`).join('') + '<button type="button" onclick="applyAnswers()">Перенести заполненные ответы в карточку</button>';
+    const additions = FIELD_KEYS.filter(k => !answers[k] && result.card[k]);
+    $('#aiCandidate').innerHTML = additions.length ? `<details open><summary>Предложенные сведения</summary>${additions.map(k => `<p class="small"><b>${esc(FIELD_DEFS.find(f => f.key === k).label)}:</b> ${esc(result.card[k])}</p>`).join('')}<button type="button" onclick="applyAICard()">Перенести предложения в карточку</button></details>` : '';
+  } catch (error) {
+    if (run === aiRun && $('#editorform') === form) { $('#aiStatus').textContent = error.message; toast(error.message); }
+  } finally {
+    if (run === aiRun && $('#editorform') === form) { button.disabled = false; button.textContent = 'Разобрать запрос и задать вопросы'; }
+  }
 }
-
-function saveTask(e, id) {
-  e.preventDefault();
+function invalidateCandidateOnly() { $('#editorform').elements.confirmed.checked = false; }
+function applyAnswers() {
+  const form = $('#editorform'); let count = 0;
+  for (const [i, q] of lastQuestions.entries()) {
+    const value = $('#answer' + i)?.value.trim();
+    if (value) { form.elements[q.field].value = value; count++; }
+  }
+  if (count) { editorChanged(); toast('Ответы перенесены. Рейтинг предварительный до подтверждения.'); }
+  else toast('Сначала заполните хотя бы один ответ.');
+}
+function applyAICard() {
+  if (!aiCandidate) return;
+  const form = $('#editorform');
+  for (const key of FIELD_KEYS) if (!form.elements[key].value.trim() && aiCandidate[key]) form.elements[key].value = aiCandidate[key];
+  editorChanged(); toast('Предложения внесены в форму. Проверьте их перед подтверждением.');
+}
+function persistEditor(confirm) {
   if (role !== 'business') return;
-  let f = e.target;
-  let fields = names.map((_, i) => f.elements['f' + i].value.trim());
-  let parts = checks.map((cs, i) => cs.reduce((s, _, j) => s + (f.elements[`c${i}_${j}`].checked ? 5 : 0), 0));
-  let t = tasks.find(t => t.id === id);
-  let data = {
-    title: f.elements['title'].value,
-    topic: f.topic.value,
-    fields,
-    parts,
-    score: parts.reduce((a, b) => a + b, 0),
-    published: f.publish.checked,
-    desc: fields[0] || 'Бизнес уточняет постановку задачи.'
-  };
-  if (t) Object.assign(t, data);
-  else tasks.push({ ...data, id: Date.now(), company: 'Qadam Support', mark: 'Q', tags: ['Новая задача'], own: true });
-  toast('Карточка подтверждена, рейтинг пересчитан');
-  go('cabinet');
+  const form = $('#editorform');
+  try {
+    if (confirm && !form.elements.confirmed.checked) throw new Error('Подтвердите сведения в карточке.');
+    const task = model.save(editorId, readEditor(), form.elements.rawText.value, { confirm, publish: confirm && Boolean(form.elements.publish?.checked) });
+    syncData(); editor(task.id);
+    toast(confirm ? 'Сведения подтверждены. Рейтинг и опубликованная карточка обновлены.' : 'Черновик сохранён. Подтверждённая карточка не изменена.');
+  } catch (error) { toast(error.message); }
 }
+function saveDraft() { persistEditor(false); }
+function saveTask(event) { event.preventDefault(); persistEditor(true); }
 
 // ==== Старт ====
+window.addEventListener('storage', event => {
+  if (event.key === model.store.key) toast('Данные изменились в другой вкладке. Сохраните свой ввод и обновите страницу.');
+});
 render();

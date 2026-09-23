@@ -11,14 +11,14 @@
 <body>
 
   <div class="demo">
-    <span>Интерактивный макет · Только тестовые данные. Регистрация и проверка имитируются.</span>
+    <span>Демо MVP · Задачи и отклики сохраняются в этом браузере. Вход и проверка студентов имитируются.</span>
     <label style="display:flex;align-items:center;gap:10px;margin:0;color:white;font-size:13px">
       Посмотреть как
       <select id="role" aria-label="Демонстрационная роль">
         <option value="guest">Гость</option>
         <option value="student">Студент · подтверждён</option>
         <option value="pending">Студент · на проверке</option>
-        <option value="business">Бизнес · Qadam</option>
+        <option value="business">Бизнес · учебные задачи</option>
         <option value="moderator">Модератор</option>
       </select>
     </label>
@@ -35,6 +35,6 @@
   <dialog id="modal"></dialog>
   <div id="toast" role="status" hidden></div>
 
-  <script src="app.js"></script>
+  <script type="module" src="js/bootstrap.mjs"></script>
 </body>
 </html>

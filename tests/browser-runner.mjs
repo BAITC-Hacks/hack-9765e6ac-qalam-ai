@@ -1,0 +1,11 @@
+import { runTests } from './core.test.mjs';
+import { runIntegrationTests } from './integration.test.mjs';
+const output = document.getElementById('test-results');
+const log = r => { output.textContent += `${r.passed ? 'PASS' : 'FAIL'} ${r.name}${r.error ? ': ' + r.error : ''}\n`; };
+const core = await runTests(log);
+const integration = await runIntegrationTests(log);
+const report = { total: core.total + integration.total, passed: core.passed + integration.passed, failed: [...core.failed, ...integration.failed] };
+document.getElementById('summary').textContent = `${report.passed}/${report.total} проверок пройдено`;
+document.body.dataset.testsPassed = String(report.passed);
+document.body.dataset.testsTotal = String(report.total);
+window.testReport = report;
